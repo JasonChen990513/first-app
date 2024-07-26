@@ -1,10 +1,7 @@
 
 
-
-
-
-function ConnectLocal(){
-    return(<div>connect to local host</div>)
+function ConnectContract(){
+    return(<div>connect to Contract</div>)
 }
 
-export default ConnectLocal;
+export default ConnectContract;
