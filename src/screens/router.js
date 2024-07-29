@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import '../index.css';
 import Page1 from "./Page1";
 import Next from "./next";
-import ConnectLocal from "./connectLocal";
+import ConnectContract from "./connectContract";
 
 
 const queryClient = new QueryClient();
@@ -36,8 +36,8 @@ export const Root = () => {
         <NavLink to='/p1' className={({ isActive }) => (isActive ? 'text-red-500' : '')}>
 					Meta Mask
 				</NavLink>
-        <NavLink to='/connectLocal' className={({ isActive }) => (isActive ? 'text-red-500' : '')}>
-          ConnectLocal
+        <NavLink to='/connectContract' className={({ isActive }) => (isActive ? 'text-red-500' : '')}>
+          ConnectContract
 				</NavLink>
         <NavLink to='/next' className={({ isActive }) => (isActive ? 'text-red-500' : '')}>
           Next
@@ -84,8 +84,8 @@ export const Root = () => {
           element: <Page1 />,
         },
         {
-          path: "connectLocal",
-          element: <ConnectLocal />,
+          path: "connectContract",
+          element: <ConnectContract />,
         },
         {
           path: "next",
