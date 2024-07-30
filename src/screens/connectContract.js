@@ -5,18 +5,18 @@ import { useEffect, useState } from 'react';
 import { useSDK } from "@metamask/sdk-react"; 
 
 
-async function testingRegister(){
-    const {signer} = await connectWallet();
-    const writeContract = getContract(signer);
-    //await contract.register();
-    try{
-        await writeContract.register();
-    } catch(error){
-        //console.log(error);
-        alert(error);
-    }
+// async function testingRegister(){
+//     const {signer} = await connectWallet();
+//     const writeContract = getContract(signer);
+//     //await contract.register();
+//     try{
+//         await writeContract.register();
+//     } catch(error){
+//         //console.log(error);
+//         alert(error);
+//     }
 
-}
+// }
 //testingRegister();
 
 function ConnectContract(){
@@ -33,11 +33,12 @@ function ConnectContract(){
 
     useEffect(()=>{
         async function ConnectWellet(){
+            //connect to the voting contract
             let writeContract;
             try{
                 const {account, signer} = await connectWallet();
                 writeContract = getContract(signer);
-                console.log(account);
+                //console.log(account);
                 setAddress(account);
                 setContract(writeContract);
             } catch(error){
@@ -86,7 +87,7 @@ function ConnectContract(){
                 const Winer = await writeContract.getWiner();
                 const vote = await writeContract.highestVote();
                 setResult(Winer);
-                console.log(' highest vote ' + vote)
+                //console.log(' highest vote ' + vote)
                 setGetVote(vote.toString());
             } catch(error){
                 //console.log(error);
@@ -96,23 +97,42 @@ function ConnectContract(){
 
 
             // Listen to the event
-            const eventListener = (from, value) => {
-                setResult(prevEvents => [...prevEvents, { from, value: value.toString() }]);
+            const eventListener = (winerAddress) => {
+                setResult(winerAddress.toString());
                 setRenew(!renew);
             };
 
-            writeContract.on('showWiner', eventListener);
+            const stageEventListener = (Stage) => {
 
+                console.log('this is value')
+                console.log(Stage)
+                if(Stage.toString() === 'toNominateStage'){
+                    console.log('Now is Nominate Stage')
+                }
+                if(Stage.toString() === 'toVoteStage'){
+                    console.log('Now is Voting Stage')
+                }
+                
+                setRenew(!renew);
+            };
+
+            //set the event listener
+            writeContract.on('showWiner', eventListener);
+            writeContract.on('systemInfo', stageEventListener);
+
+            //set the info from smart contrat
             setRegisterList(Registerlist);
-            setNomineeList(Nominatedlist)
+            setNomineeList(Nominatedlist);
+
 
             // Clean up the event listener
             return () => {
                 writeContract.off('showWiner', eventListener);
+                writeContract.off('systemInfo', stageEventListener);
             };
-            }
+        }
         
-        //connect to the voting contract
+
 
         ConnectWellet();
         //GetRegisterList();
@@ -129,6 +149,7 @@ function ConnectContract(){
         }
     }
 
+    // get the register list information
     const GetRegisterList = async() =>{
         let list;
         try{
@@ -140,6 +161,7 @@ function ConnectContract(){
        setRegisterList(list)
     }
 
+    // get the nominate list information    
     const NominateeList = async() =>{
         let list;
         try{
@@ -151,6 +173,7 @@ function ConnectContract(){
         setNomineeList(list)
     }
 
+    //call smart contract nominate function
     const Nominate = async(index) =>{
         try{
             await contract.nominate(registerList[index]);
@@ -161,6 +184,7 @@ function ConnectContract(){
         }
     }
 
+    //call smart contract voting function
     const Vote = async(index) =>{
         try{
             await contract.vote(nomineeList[index]);
@@ -171,7 +195,7 @@ function ConnectContract(){
         }
     }
 
-
+    //call smart contract function to change to nominate stage 
     const ToNominate = async() =>{
         try {
             await contract.toNominateStage();
@@ -180,7 +204,7 @@ function ConnectContract(){
         }
        
     }
-
+    //call smart contract function to change to voting stage 
     const ToVoting = async() =>{
         try {
             await contract.toVoteStage();
@@ -188,16 +212,16 @@ function ConnectContract(){
             alert(error);
         }
     }
-
+    // call reset function
     const Reset = async() =>{
-
+        //await contract.reset();
         try {
             await contract.reset();
         } catch (error) {
-            alert(error);
+            console.log(error.message)
         }
     }
-
+    // when the wallet change, reset the address and refresh the page
     provider?.on('accountsChanged', accounts => {
 		localStorage.setItem('address', accounts[0]);
 		setAddress(accounts?.length < 1 ? '' : accounts[0]);
@@ -208,12 +232,77 @@ function ConnectContract(){
 
     return(
     <div className='p-3'>
-        <div>connect to Contract</div>
+        <div>Connect to Contract</div>
         <div>Owner is {owner}</div>    
         <div>Stage is {stage}</div>
         <div>Current user address is {address}</div>
+
+        <section>
+            <div>-------------------------------------------------------------</div>
+            <div>
+                { (stage === "Register") && <div>
+                    <button className='  border-2 border-black rounded-2xl px-2 py-1' onClick={register}>Register</button>
+                    <div>Register List</div>
+                    <div>
+                        <ul>
+                        {registerList.length === 0 ? (
+                        <li>No addresses found</li>
+                            ) : (
+                                registerList.map((address, index) => (
+                                <li key={index}>{address}</li>
+                            ))
+                            )}
+                        </ul>
+                    </div>
+                    <button className='  border-2 border-black rounded-2xl px-2 py-1' onClick={GetRegisterList}>Get Register list </button>
+                </div> }
+                { (stage === "Nominate") && <div>
+                    <div>Choose who to be nominees</div>
+                    <div>
+                        <ul className=' flex gap-3'>
+                        {registerList.length === 0 ? (
+                        <li>No registed addresses found</li>
+                            ) : (
+                                registerList.map((address, index) => (
+                                <button key={index} className='  border-2 border-black rounded-2xl px-2 py-1' onClick={()=>{Nominate(index)}}>{index+1}. {address}</button>
+                            ))
+                            )}
+                        </ul>
+                    </div>
+                    <div>Nominated List</div>
+                    <div>
+                        <ul>
+                        {nomineeList.length === 0 ? (
+                        <li>No addresses found</li>
+                            ) : (
+                                nomineeList.map((address, index) => (
+                                <li key={index}>{address}</li>
+                            ))
+                            )}
+                        </ul>
+                    </div>
+                    <button className='  border-2 border-black rounded-2xl px-2 py-1' onClick={NominateeList}>Get Nominated list </button>
+                </div> }
+                { (stage === "Voting") && <div>
+                    <div>Vote to who?</div>
+                    <div>
+                        <ul className=' flex gap-3'>
+                        {nomineeList.length === 0 ? (
+                        <li>No registed addresses found</li>
+                            ) : (
+                                nomineeList.map((address, index) => (
+                                <button key={index} className='  border-2 border-black rounded-2xl px-2 py-1' onClick={()=>{Vote(index)}}>{index+1}. {address}</button>
+                            ))
+                            )}
+                        </ul>
+                    </div>
+                </div> }
+            </div>
+            <div>-------------------------------------------------------------</div>
+        </section>
         <br/>
         <br/>
+        <p>below is for testing</p>
         <button className='  border-2 border-black rounded-2xl px-2 py-1' onClick={register}>Register</button>
         <div>Register List</div>
         <div>
